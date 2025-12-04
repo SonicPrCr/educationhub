@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-export default function ResetPasswordPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+function ResetPasswordForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
 
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!token) {
-      setError("Недействительная ссылка для сброса пароля")
+      setError("Недействительная ссылка для сброса пароля");
     }
-  }, [token])
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (password !== confirmPassword) {
-      setError("Пароли не совпадают")
-      return
+      setError("Пароли не совпадают");
+      return;
     }
 
     if (!token) {
-      setError("Недействительная ссылка")
-      return
+      setError("Недействительная ссылка");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       const response = await fetch("/api/auth/reset-password", {
@@ -44,25 +44,25 @@ export default function ResetPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ token, password }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Ошибка при сбросе пароля")
-        setLoading(false)
-        return
+        setError(data.error || "Ошибка при сбросе пароля");
+        setLoading(false);
+        return;
       }
 
-      setSuccess(true)
+      setSuccess(true);
       setTimeout(() => {
-        router.push("/auth/login")
-      }, 2000)
-    } catch (err) {
-      setError("Произошла ошибка")
-      setLoading(false)
+        router.push("/auth/login");
+      }, 2000);
+    } catch {
+      setError("Произошла ошибка");
+      setLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
@@ -78,7 +78,7 @@ export default function ResetPasswordPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -154,6 +154,22 @@ export default function ResetPasswordPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
 
+export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Загрузка...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}

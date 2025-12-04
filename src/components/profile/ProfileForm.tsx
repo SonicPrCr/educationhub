@@ -1,112 +1,112 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface User {
-  id: number
-  email: string
-  name: string | null
-  avatar: string | null
+  id: number;
+  email: string;
+  name: string | null;
+  avatar: string | null;
 }
 
 export function ProfileForm({ user }: { user: User }) {
-  const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [name, setName] = useState(user.name || "")
-  const [avatar, setAvatar] = useState(user.avatar)
-  const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState(user.name || "");
+  const [avatar, setAvatar] = useState(user.avatar);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // Проверка типа файла
     if (!file.type.startsWith("image/")) {
-      setError("Файл должен быть изображением")
-      return
+      setError("Файл должен быть изображением");
+      return;
     }
 
     // Проверка размера файла
     if (file.size > 5 * 1024 * 1024) {
-      setError("Размер файла не должен превышать 5MB")
-      return
+      setError("Размер файла не должен превышать 5MB");
+      return;
     }
 
-    setUploading(true)
-    setError("")
+    setUploading(true);
+    setError("");
 
     try {
-      const formData = new FormData()
-      formData.append("avatar", file)
+      const formData = new FormData();
+      formData.append("avatar", file);
 
       const response = await fetch("/api/profile/avatar", {
         method: "POST",
         body: formData,
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Ошибка при загрузке аватара")
-        setUploading(false)
-        return
+        setError(data.error || "Ошибка при загрузке аватара");
+        setUploading(false);
+        return;
       }
 
-      setAvatar(data.avatar)
-      setSuccess("Аватар успешно обновлен")
-      router.refresh()
-      
+      setAvatar(data.avatar);
+      setSuccess("Аватар успешно обновлен");
+      router.refresh();
+
       // Очищаем сообщение об успехе через 3 секунды
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err) {
-      setError("Произошла ошибка при загрузке")
+      setTimeout(() => setSuccess(""), 3000);
+    } catch {
+      setError("Произошла ошибка при загрузке");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const handleDeleteAvatar = async () => {
     if (!confirm("Вы уверены, что хотите удалить аватар?")) {
-      return
+      return;
     }
 
-    setUploading(true)
-    setError("")
+    setUploading(true);
+    setError("");
 
     try {
       const response = await fetch("/api/profile/avatar", {
         method: "DELETE",
-      })
+      });
 
       if (!response.ok) {
-        const data = await response.json()
-        setError(data.error || "Ошибка при удалении аватара")
-        setUploading(false)
-        return
+        const data = await response.json();
+        setError(data.error || "Ошибка при удалении аватара");
+        setUploading(false);
+        return;
       }
 
-      setAvatar(null)
-      setSuccess("Аватар удален")
-      router.refresh()
-      
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err) {
-      setError("Произошла ошибка")
+      setAvatar(null);
+      setSuccess("Аватар удален");
+      router.refresh();
+
+      setTimeout(() => setSuccess(""), 3000);
+    } catch {
+      setError("Произошла ошибка");
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-    setSuccess("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
     try {
       const response = await fetch("/api/profile", {
@@ -115,26 +115,26 @@ export function ProfileForm({ user }: { user: User }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Ошибка при обновлении профиля")
-        setLoading(false)
-        return
+        setError(data.error || "Ошибка при обновлении профиля");
+        setLoading(false);
+        return;
       }
 
-      setSuccess("Профиль успешно обновлен")
-      router.refresh()
-      
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err) {
-      setError("Произошла ошибка")
+      setSuccess("Профиль успешно обновлен");
+      router.refresh();
+
+      setTimeout(() => setSuccess(""), 3000);
+    } catch {
+      setError("Произошла ошибка");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -254,6 +254,5 @@ export function ProfileForm({ user }: { user: User }) {
         </div>
       </form>
     </div>
-  )
+  );
 }
-

@@ -1,32 +1,32 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export function EnrollButton({ courseId }: { courseId: number }) {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const handleEnroll = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch(`/api/courses/${courseId}/enroll`, {
         method: "POST",
-      })
+      });
 
       if (response.ok) {
-        router.push(`/learn/${courseId}`)
-        router.refresh()
+        router.push(`/learn/${courseId}`);
+        router.refresh();
       } else {
-        const data = await response.json()
-        alert(data.error || "Ошибка при записи на курс")
+        const data = await response.json();
+        alert(data.error || "Ошибка при записи на курс");
       }
-    } catch (error) {
-      alert("Произошла ошибка")
+    } catch {
+      alert("Произошла ошибка");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <button
@@ -36,7 +36,5 @@ export function EnrollButton({ courseId }: { courseId: number }) {
     >
       {loading ? "Запись..." : "Записаться на курс"}
     </button>
-  )
+  );
 }
-
-

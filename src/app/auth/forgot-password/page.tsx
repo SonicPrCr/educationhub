@@ -1,21 +1,19 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { useState } from "react";
+import Link from "next/link";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setSuccess(false)
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+    setLoading(true);
 
     try {
       const response = await fetch("/api/auth/forgot-password", {
@@ -24,22 +22,22 @@ export default function ForgotPasswordPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Ошибка при отправке письма")
-        setLoading(false)
-        return
+        setError(data.error || "Ошибка при отправке письма");
+        setLoading(false);
+        return;
       }
 
-      setSuccess(true)
-    } catch (err) {
-      setError("Произошла ошибка")
-      setLoading(false)
+      setSuccess(true);
+    } catch {
+      setError("Произошла ошибка");
+      setLoading(false);
     }
-  }
+  };
 
   if (success) {
     return (
@@ -62,7 +60,7 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -73,8 +71,7 @@ export default function ForgotPasswordPage() {
             Восстановление пароля
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Введите ваш email, и мы отправим инструкции по восстановлению
-            пароля
+            Введите ваш email, и мы отправим инструкции по восстановлению пароля
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -121,6 +118,5 @@ export default function ForgotPasswordPage() {
         </form>
       </div>
     </div>
-  )
+  );
 }
-

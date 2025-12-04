@@ -1,24 +1,26 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { lessons } from "@/lib/schema"
+import { useState } from "react";
+import { lessons } from "@/lib/schema";
 
-type Lesson = typeof lessons.$inferSelect
+type Lesson = typeof lessons.$inferSelect;
 
 export function LessonView({
   lesson,
-  courseId,
+  courseId: _courseId,
   isCompleted,
 }: {
-  lesson: Lesson
-  courseId: number
-  isCompleted: boolean
+  lesson: Lesson;
+  courseId: number;
+  isCompleted: boolean;
 }) {
-  const [completed, setCompleted] = useState(isCompleted)
-  const [loading, setLoading] = useState(false)
+  // courseId может быть использован в будущем для навигации или других функций
+  // Префикс подчеркивания указывает, что параметр намеренно не используется
+  const [completed, setCompleted] = useState(isCompleted);
+  const [loading, setLoading] = useState(false);
 
   const handleToggleComplete = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await fetch("/api/progress", {
         method: "POST",
@@ -29,21 +31,21 @@ export function LessonView({
           lessonId: lesson.id,
           completed: !completed,
         }),
-      })
+      });
 
       if (response.ok) {
-        setCompleted(!completed)
+        setCompleted(!completed);
         // Обновляем страницу для обновления прогресса
-        window.location.reload()
+        window.location.reload();
       } else {
-        alert("Ошибка при обновлении прогресса")
+        alert("Ошибка при обновлении прогресса");
       }
-    } catch (error) {
-      alert("Произошла ошибка")
+    } catch {
+      alert("Произошла ошибка");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
@@ -84,7 +86,5 @@ export function LessonView({
         </button>
       </div>
     </div>
-  )
+  );
 }
-
-

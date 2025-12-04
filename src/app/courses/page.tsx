@@ -1,14 +1,14 @@
-import Link from "next/link"
-import Image from "next/image"
-import { db } from "@/lib/db"
+import Link from "next/link";
+import Image from "next/image";
+import { db } from "@/lib/db";
 import {
   courses,
   categories,
   institutions,
   instructors,
   enrollments,
-} from "@/lib/schema"
-import { desc, eq, sql, and, or, like } from "drizzle-orm"
+} from "@/lib/schema";
+import { desc, eq, sql, and, or, like } from "drizzle-orm";
 
 async function getCourses(
   page: number = 1,
@@ -17,19 +17,25 @@ async function getCourses(
   format?: string,
   search?: string
 ) {
-  const limit = 12
-  const skip = (page - 1) * limit
+  const limit = 12;
+  const skip = (page - 1) * limit;
 
-  const conditions = []
+  const conditions = [];
 
   if (categorySlug) {
-    conditions.push(eq(categories.slug, categorySlug))
+    conditions.push(eq(categories.slug, categorySlug));
   }
-  if (level) {
-    conditions.push(eq(courses.level, level as any))
+  if (
+    level &&
+    (level === "BEGINNER" || level === "INTERMEDIATE" || level === "ADVANCED")
+  ) {
+    conditions.push(eq(courses.level, level));
   }
-  if (format) {
-    conditions.push(eq(courses.format, format as any))
+  if (
+    format &&
+    (format === "ONLINE" || format === "OFFLINE" || format === "HYBRID")
+  ) {
+    conditions.push(eq(courses.format, format));
   }
   if (search) {
     conditions.push(
@@ -37,10 +43,10 @@ async function getCourses(
         like(courses.title, `%${search}%`),
         like(courses.description || "", `%${search}%`)
       )!
-    )
+    );
   }
 
-  const where = conditions.length > 0 ? and(...conditions) : undefined
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const [coursesList, total] = await Promise.all([
     db
@@ -74,39 +80,40 @@ async function getCourses(
       .from(courses)
       .leftJoin(categories, eq(courses.categoryId, categories.id))
       .where(where),
-  ])
+  ]);
 
   return {
     courses: coursesList,
     total: Number(total[0]?.count || 0),
     totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
-  }
+  };
 }
 
 async function getCategories() {
-  return await db.select().from(categories)
+  return await db.select().from(categories);
 }
 
 export default async function CoursesPage({
   searchParams,
 }: {
-  searchParams: {
-    page?: string
-    category?: string
-    level?: string
-    format?: string
-    search?: string
-  }
+  searchParams: Promise<{
+    page?: string;
+    category?: string;
+    level?: string;
+    format?: string;
+    search?: string;
+  }>;
 }) {
-  const page = parseInt(searchParams.page || "1")
+  const resolvedSearchParams = await searchParams;
+  const page = parseInt(resolvedSearchParams.page || "1");
   const { courses: coursesList, totalPages } = await getCourses(
     page,
-    searchParams.category,
-    searchParams.level,
-    searchParams.format,
-    searchParams.search
-  )
-  const categoriesList = await getCategories()
+    resolvedSearchParams.category,
+    resolvedSearchParams.level,
+    resolvedSearchParams.format,
+    resolvedSearchParams.search
+  );
+  const categoriesList = await getCategories();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -122,7 +129,7 @@ export default async function CoursesPage({
               type="text"
               name="search"
               placeholder="Поиск по названию..."
-              defaultValue={searchParams.search}
+              defaultValue={resolvedSearchParams.search}
               className="border rounded px-4 py-2 dark:bg-gray-700 dark:text-white"
             />
             <select
@@ -134,7 +141,7 @@ export default async function CoursesPage({
                 <option
                   key={cat.id}
                   value={cat.slug}
-                  selected={searchParams.category === cat.slug}
+                  selected={resolvedSearchParams.category === cat.slug}
                 >
                   {cat.name}
                 </option>
@@ -147,19 +154,19 @@ export default async function CoursesPage({
               <option value="">Все уровни</option>
               <option
                 value="BEGINNER"
-                selected={searchParams.level === "BEGINNER"}
+                selected={resolvedSearchParams.level === "BEGINNER"}
               >
                 Начинающий
               </option>
               <option
                 value="INTERMEDIATE"
-                selected={searchParams.level === "INTERMEDIATE"}
+                selected={resolvedSearchParams.level === "INTERMEDIATE"}
               >
                 Средний
               </option>
               <option
                 value="ADVANCED"
-                selected={searchParams.level === "ADVANCED"}
+                selected={resolvedSearchParams.level === "ADVANCED"}
               >
                 Продвинутый
               </option>
@@ -169,18 +176,21 @@ export default async function CoursesPage({
               className="border rounded px-4 py-2 dark:bg-gray-700 dark:text-white"
             >
               <option value="">Все форматы</option>
-              <option value="ONLINE" selected={searchParams.format === "ONLINE"}>
+              <option
+                value="ONLINE"
+                selected={resolvedSearchParams.format === "ONLINE"}
+              >
                 Онлайн
               </option>
               <option
                 value="OFFLINE"
-                selected={searchParams.format === "OFFLINE"}
+                selected={resolvedSearchParams.format === "OFFLINE"}
               >
                 Офлайн
               </option>
               <option
                 value="HYBRID"
-                selected={searchParams.format === "HYBRID"}
+                selected={resolvedSearchParams.format === "HYBRID"}
               >
                 Гибридный
               </option>
@@ -259,7 +269,23 @@ export default async function CoursesPage({
                   (p) => (
                     <Link
                       key={p}
-                      href={`/courses?page=${p}${searchParams.category ? `&category=${searchParams.category}` : ""}${searchParams.level ? `&level=${searchParams.level}` : ""}${searchParams.format ? `&format=${searchParams.format}` : ""}${searchParams.search ? `&search=${searchParams.search}` : ""}`}
+                      href={`/courses?page=${p}${
+                        resolvedSearchParams.category
+                          ? `&category=${resolvedSearchParams.category}`
+                          : ""
+                      }${
+                        resolvedSearchParams.level
+                          ? `&level=${resolvedSearchParams.level}`
+                          : ""
+                      }${
+                        resolvedSearchParams.format
+                          ? `&format=${resolvedSearchParams.format}`
+                          : ""
+                      }${
+                        resolvedSearchParams.search
+                          ? `&search=${resolvedSearchParams.search}`
+                          : ""
+                      }`}
                       className={`px-4 py-2 rounded ${
                         p === page
                           ? "bg-blue-600 text-white"
@@ -276,7 +302,5 @@ export default async function CoursesPage({
         )}
       </div>
     </div>
-  )
+  );
 }
-
-

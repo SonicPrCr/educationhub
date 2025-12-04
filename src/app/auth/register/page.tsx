@@ -1,48 +1,48 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-  })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+    email: "",
+    password: "",
+    name: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Ошибка при регистрации')
-        setLoading(false)
-        return
+        setError(data.error || "Ошибка при регистрации");
+        setLoading(false);
+        return;
       }
 
       // Регистрация успешна, перенаправляем на страницу входа
-      router.push('/auth/login?registered=true')
-    } catch (err) {
-      setError('Произошла ошибка при регистрации')
-      setLoading(false)
+      router.push("/auth/login?registered=true");
+    } catch {
+      setError("Произошла ошибка при регистрации");
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -52,7 +52,7 @@ export default function RegisterPage() {
             Регистрация
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Или{' '}
+            Или{" "}
             <Link
               href="/auth/login"
               className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
@@ -128,13 +128,11 @@ export default function RegisterPage() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Регистрация...' : 'Зарегистрироваться'}
+              {loading ? "Регистрация..." : "Зарегистрироваться"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
-
-

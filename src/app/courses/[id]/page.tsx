@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation"
-import { db } from "@/lib/db"
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
 import {
   courses,
   categories,
@@ -9,22 +9,23 @@ import {
   reviews,
   enrollments,
   users,
-} from "@/lib/schema"
-import { eq, desc, and } from "drizzle-orm"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-config"
-import { EnrollButton } from "@/components/courses/EnrollButton"
-import Link from "next/link"
+} from "@/lib/schema";
+import { eq, desc, and } from "drizzle-orm";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-config";
+import { EnrollButton } from "@/components/courses/EnrollButton";
+import Link from "next/link";
+import Image from "next/image";
 
 async function getCourse(id: number) {
   const [course] = await db
     .select()
     .from(courses)
     .where(eq(courses.id, id))
-    .limit(1)
+    .limit(1);
 
   if (!course) {
-    return null
+    return null;
   }
 
   const [category, institution, instructor, courseLessons, courseReviews] =
@@ -69,7 +70,7 @@ async function getCourse(id: number) {
         .where(eq(reviews.courseId, course.id))
         .orderBy(desc(reviews.createdAt))
         .limit(10),
-    ])
+    ]);
 
   return {
     course,
@@ -78,50 +79,52 @@ async function getCourse(id: number) {
     instructor: instructor[0] || null,
     lessons: courseLessons,
     reviews: courseReviews,
-  }
+  };
 }
 
 async function checkEnrollment(userId: number | undefined, courseId: number) {
-  if (!userId) return null
+  if (!userId) return null;
 
   const [enrollment] = await db
     .select()
     .from(enrollments)
-    .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)))
-    .limit(1)
+    .where(
+      and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId))
+    )
+    .limit(1);
 
-  return enrollment || null
+  return enrollment || null;
 }
 
 export default async function CoursePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>;
 }) {
-  const courseId = parseInt(params.id)
+  const { id } = await params;
+  const courseId = parseInt(id);
   if (isNaN(courseId)) {
-    notFound()
+    notFound();
   }
 
-  const session = await getServerSession(authOptions)
-  const courseData = await getCourse(courseId)
+  const session = await getServerSession(authOptions);
+  const courseData = await getCourse(courseId);
 
   if (!courseData) {
-    notFound()
+    notFound();
   }
 
   const { course, category, institution, instructor, lessons, reviews } =
-    courseData
+    courseData;
 
-  const enrollment =
-    session?.user?.id
-      ? await checkEnrollment(parseInt(session.user.id), courseId)
-      : null
+  const enrollment = session?.user?.id
+    ? await checkEnrollment(parseInt(session.user.id), courseId)
+    : null;
 
   const averageRating =
     reviews.length > 0
       ? reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length
-      : 0
+      : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -131,10 +134,11 @@ export default async function CoursePage({
           <div>
             {course.image && (
               <div className="relative w-full h-64 mb-6 rounded-lg overflow-hidden">
-                <img
+                <Image
                   src={course.image}
                   alt={course.title || "Course"}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
             )}
@@ -196,9 +200,7 @@ export default async function CoursePage({
               )}
             </div>
 
-            {session && !enrollment && (
-              <EnrollButton courseId={courseId} />
-            )}
+            {session && !enrollment && <EnrollButton courseId={courseId} />}
             {enrollment && (
               <Link
                 href={`/learn/${courseId}`}
@@ -225,9 +227,7 @@ export default async function CoursePage({
                     <span className="text-gray-900 dark:text-white">
                       {index + 1}. {lesson.title}
                     </span>
-                    {enrollment && (
-                      <span className="text-green-600">✓</span>
-                    )}
+                    {enrollment && <span className="text-green-600">✓</span>}
                   </div>
                 ))}
               </div>
@@ -282,7 +282,5 @@ export default async function CoursePage({
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-

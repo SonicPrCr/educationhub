@@ -1,9 +1,9 @@
-import { NextAuthOptions } from "next-auth"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { db } from "@/lib/db"
-import { users } from "@/lib/schema"
-import { eq } from "drizzle-orm"
-import bcrypt from "bcryptjs"
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,7 +15,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email и пароль обязательны")
+          throw new Error("Email и пароль обязательны");
         }
 
         // Поиск пользователя
@@ -23,20 +23,20 @@ export const authOptions: NextAuthOptions = {
           .select()
           .from(users)
           .where(eq(users.email, credentials.email))
-          .limit(1)
+          .limit(1);
 
         if (!user || !user.password) {
-          throw new Error("Неверный email или пароль")
+          throw new Error("Неверный email или пароль");
         }
 
         // Проверка пароля
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
-        )
+        );
 
         if (!isPasswordValid) {
-          throw new Error("Неверный email или пароль")
+          throw new Error("Неверный email или пароль");
         }
 
         // Возвращаем объект пользователя для сессии
@@ -45,7 +45,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name || undefined,
           role: user.role || "STUDENT",
-        }
+        };
       },
     }),
   ],
@@ -53,18 +53,18 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       // При первом входе добавляем данные пользователя в токен
       if (user) {
-        token.id = user.id
-        token.role = (user as any).role
+        token.id = user.id;
+        token.role = user.role || "STUDENT";
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       // Добавляем данные из токена в сессию
       if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
-      return session
+      return session;
     },
   },
   pages: {
@@ -76,6 +76,4 @@ export const authOptions: NextAuthOptions = {
     maxAge: 7 * 24 * 60 * 60, // 7 дней
   },
   secret: process.env.NEXTAUTH_SECRET,
-}
-
-
+};

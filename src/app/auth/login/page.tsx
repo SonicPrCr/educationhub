@@ -1,57 +1,57 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { signIn } from 'next-auth/react'
-import Link from 'next/link'
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
 
-export default function LoginPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(false)
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      setSuccess('Регистрация успешна! Теперь вы можете войти.')
+    if (searchParams.get("registered") === "true") {
+      setSuccess("Регистрация успешна! Теперь вы можете войти.");
     }
-    if (searchParams.get('error')) {
-      setError('Ошибка при авторизации. Проверьте email и пароль.')
+    if (searchParams.get("error")) {
+      setError("Ошибка при авторизации. Проверьте email и пароль.");
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
         redirect: false,
-      })
+      });
 
       if (result?.error) {
-        setError('Неверный email или пароль')
-        setLoading(false)
-        return
+        setError("Неверный email или пароль");
+        setLoading(false);
+        return;
       }
 
       // Авторизация успешна, перенаправляем на главную страницу
-      router.push('/')
-      router.refresh()
-    } catch (err) {
-      setError('Произошла ошибка при авторизации')
-      setLoading(false)
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Произошла ошибка при авторизации");
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -61,7 +61,7 @@ export default function LoginPage() {
             Вход в аккаунт
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Или{' '}
+            Или{" "}
             <Link
               href="/auth/register"
               className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
@@ -134,12 +134,28 @@ export default function LoginPage() {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Вход...' : 'Войти'}
+              {loading ? "Вход..." : "Войти"}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Загрузка...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
+  );
+}

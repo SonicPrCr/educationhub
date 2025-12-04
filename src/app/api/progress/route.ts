@@ -1,57 +1,55 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-config"
-import { db } from "@/lib/db"
-import { progress, lessons, enrollments, certificates } from "@/lib/schema"
-import { eq, and, sql } from "drizzle-orm"
-import { z } from "zod"
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-config";
+import { db } from "@/lib/db";
+import { progress, lessons, enrollments, certificates } from "@/lib/schema";
+import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 
 const progressSchema = z.object({
   lessonId: z.number(),
   completed: z.boolean(),
-})
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const validated = progressSchema.safeParse(body)
+    const body = await request.json();
+    const validated = progressSchema.safeParse(body);
 
     if (!validated.success) {
       return NextResponse.json(
-        { error: validated.error.errors },
+        { error: validated.error.issues[0]?.message || "Ошибка валидации" },
         { status: 400 }
-      )
+      );
     }
 
-    const userId = parseInt(session.user.id)
-    const { lessonId, completed } = validated.data
+    const userId = parseInt(session.user.id);
+    const { lessonId, completed } = validated.data;
 
     // Получаем урок и курс
     const [lesson] = await db
       .select()
       .from(lessons)
       .where(eq(lessons.id, lessonId))
-      .limit(1)
+      .limit(1);
 
     if (!lesson) {
-      return NextResponse.json({ error: "Lesson not found" }, { status: 404 })
+      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
     // Проверяем существующий прогресс
     const [existingProgress] = await db
       .select()
       .from(progress)
-      .where(
-        and(eq(progress.userId, userId), eq(progress.lessonId, lessonId))
-      )
-      .limit(1)
+      .where(and(eq(progress.userId, userId), eq(progress.lessonId, lessonId)))
+      .limit(1);
 
-    let progressRecord
+    let progressRecord;
     if (existingProgress) {
       // Обновляем существующий прогресс
       const [updated] = await db
@@ -61,8 +59,8 @@ export async function POST(request: NextRequest) {
           completedAt: completed ? new Date() : null,
         })
         .where(eq(progress.id, existingProgress.id))
-        .returning()
-      progressRecord = updated
+        .returning();
+      progressRecord = updated;
     } else {
       // Создаем новый прогресс
       const [newProgress] = await db
@@ -73,39 +71,33 @@ export async function POST(request: NextRequest) {
           completed,
           completedAt: completed ? new Date() : null,
         })
-        .returning()
-      progressRecord = newProgress
+        .returning();
+      progressRecord = newProgress;
     }
 
     // Обновление прогресса курса
     const allLessons = await db
       .select()
       .from(lessons)
-      .where(eq(lessons.courseId, lesson.courseId))
+      .where(eq(lessons.courseId, lesson.courseId));
 
-    const lessonIds = allLessons.map((l) => l.id)
-    let completedCount = 0
-    
+    const lessonIds = allLessons.map((l) => l.id);
+    let completedCount = 0;
+
     if (lessonIds.length > 0) {
       const completedLessons = await db
         .select()
         .from(progress)
-        .where(
-          and(
-            eq(progress.userId, userId),
-            eq(progress.completed, true)
-          )
-        )
-      
+        .where(and(eq(progress.userId, userId), eq(progress.completed, true)));
+
       completedCount = completedLessons.filter((p) =>
         lessonIds.includes(p.lessonId)
-      ).length
+      ).length;
     }
 
-    const totalLessons = allLessons.length
-    const courseProgress = totalLessons > 0
-      ? Math.round((completedCount / totalLessons) * 100)
-      : 0
+    const totalLessons = allLessons.length;
+    const courseProgress =
+      totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
     // Проверяем, был ли курс уже завершен
     const [currentEnrollment] = await db
@@ -117,10 +109,10 @@ export async function POST(request: NextRequest) {
           eq(enrollments.courseId, lesson.courseId)
         )
       )
-      .limit(1)
+      .limit(1);
 
-    const wasCompleted = currentEnrollment?.status === "COMPLETED"
-    const isNowCompleted = courseProgress === 100 && !wasCompleted
+    const wasCompleted = currentEnrollment?.status === "COMPLETED";
+    const isNowCompleted = courseProgress === 100 && !wasCompleted;
 
     // Обновляем запись на курс
     await db
@@ -135,33 +127,32 @@ export async function POST(request: NextRequest) {
           eq(enrollments.userId, userId),
           eq(enrollments.courseId, lesson.courseId)
         )
-      )
+      );
 
     // Если курс только что завершен, создаем сертификат
     if (isNowCompleted) {
       try {
         const certificateNumber = `CERT-${Date.now()}-${Math.random()
           .toString(36)
-          .substr(2, 9)}`
+          .substr(2, 9)}`;
 
         await db.insert(certificates).values({
           userId,
           courseId: lesson.courseId,
           certificateNumber,
-        })
+        });
       } catch (error) {
         // Логируем ошибку, но не прерываем обновление прогресса
-        console.error("Failed to create certificate:", error)
+        console.error("Failed to create certificate:", error);
       }
     }
 
-    return NextResponse.json(progressRecord)
+    return NextResponse.json(progressRecord);
   } catch (error) {
-    console.error("Progress error:", error)
+    console.error("Progress error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
-    )
+    );
   }
 }
-

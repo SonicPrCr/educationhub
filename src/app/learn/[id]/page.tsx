@@ -1,27 +1,20 @@
-import { notFound, redirect } from "next/navigation"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-config"
-import { db } from "@/lib/db"
-import {
-  courses,
-  lessons,
-  enrollments,
-  progress,
-  categories,
-  instructors,
-} from "@/lib/schema"
-import { eq, and, asc } from "drizzle-orm"
-import { LessonView } from "@/components/learn/LessonView"
+import { notFound, redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-config";
+import { db } from "@/lib/db";
+import { courses, lessons, enrollments, progress } from "@/lib/schema";
+import { eq, and, asc } from "drizzle-orm";
+import { LessonView } from "@/components/learn/LessonView";
 
 async function getCourseData(courseId: number, userId: number) {
   const [course] = await db
     .select()
     .from(courses)
     .where(eq(courses.id, courseId))
-    .limit(1)
+    .limit(1);
 
   if (!course) {
-    return null
+    return null;
   }
 
   const [enrollment, courseLessons, userProgress] = await Promise.all([
@@ -37,55 +30,54 @@ async function getCourseData(courseId: number, userId: number) {
       .from(lessons)
       .where(eq(lessons.courseId, courseId))
       .orderBy(asc(lessons.order)),
-    db
-      .select()
-      .from(progress)
-      .where(eq(progress.userId, userId)),
-  ])
+    db.select().from(progress).where(eq(progress.userId, userId)),
+  ]);
 
   return {
     course,
     enrollment: enrollment[0] || null,
     lessons: courseLessons,
     progress: userProgress,
-  }
+  };
 }
 
 export default async function LearnPage({
   params,
   searchParams,
 }: {
-  params: { id: string }
-  searchParams: { lesson?: string }
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ lesson?: string }>;
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    redirect("/auth/login")
+    redirect("/auth/login");
   }
 
-  const courseId = parseInt(params.id)
+  const { id } = await params;
+  const courseId = parseInt(id);
   if (isNaN(courseId)) {
-    notFound()
+    notFound();
   }
 
-  const userId = parseInt(session.user.id)
-  const courseData = await getCourseData(courseId, userId)
+  const userId = parseInt(session.user.id);
+  const courseData = await getCourseData(courseId, userId);
 
   if (!courseData || !courseData.enrollment) {
-    redirect(`/courses/${courseId}`)
+    redirect(`/courses/${courseId}`);
   }
 
-  const { course, enrollment, lessons, progress: userProgress } = courseData
+  const { course, enrollment, lessons, progress: userProgress } = courseData;
 
   const progressMap = new Map(
     userProgress.map((p) => [p.lessonId, p.completed])
-  )
+  );
 
-  const currentLessonId = searchParams.lesson
-    ? parseInt(searchParams.lesson)
-    : lessons[0]?.id
+  const resolvedSearchParams = await searchParams;
+  const currentLessonId = resolvedSearchParams.lesson
+    ? parseInt(resolvedSearchParams.lesson)
+    : lessons[0]?.id;
 
-  const currentLesson = lessons.find((l) => l.id === currentLessonId)
+  const currentLesson = lessons.find((l) => l.id === currentLessonId);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -115,8 +107,8 @@ export default async function LearnPage({
               </div>
               <div className="space-y-2">
                 {lessons.map((lesson, index) => {
-                  const isCompleted = progressMap.get(lesson.id) || false
-                  const isActive = lesson.id === currentLessonId
+                  const isCompleted = progressMap.get(lesson.id) || false;
+                  const isActive = lesson.id === currentLessonId;
 
                   return (
                     <a
@@ -137,7 +129,7 @@ export default async function LearnPage({
                         )}
                       </div>
                     </a>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -162,7 +154,5 @@ export default async function LearnPage({
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-

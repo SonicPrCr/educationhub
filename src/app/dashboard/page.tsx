@@ -1,20 +1,18 @@
-import { redirect } from "next/navigation"
-import { getServerSession } from "next-auth/next"
-import { authOptions } from "@/lib/auth-config"
-import { db } from "@/lib/db"
+import { redirect } from "next/navigation";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth-config";
+import { db } from "@/lib/db";
 import {
   enrollments,
   courses,
   certificates,
   achievements,
-  progress,
-  lessons,
   users,
-} from "@/lib/schema"
-import { eq, and, desc } from "drizzle-orm"
-import Link from "next/link"
-import { UserInfo } from "@/components/auth/UserInfo"
-import Image from "next/image"
+} from "@/lib/schema";
+import { eq, desc } from "drizzle-orm";
+import Link from "next/link";
+import { UserInfo } from "@/components/auth/UserInfo";
+import Image from "next/image";
 
 async function getUserData(userId: number) {
   const [user, userEnrollments, userCertificates, userAchievements] =
@@ -44,16 +42,16 @@ async function getUserData(userId: number) {
         .where(eq(achievements.userId, userId))
         .orderBy(desc(achievements.earnedAt))
         .limit(10),
-    ])
+    ]);
 
   // Подсчет статистики
-  const totalCourses = userEnrollments.length
+  const totalCourses = userEnrollments.length;
   const completedCourses = userEnrollments.filter(
     (e) => e.enrollment.status === "COMPLETED"
-  ).length
+  ).length;
   const inProgressCourses = userEnrollments.filter(
     (e) => e.enrollment.status === "ENROLLED"
-  ).length
+  ).length;
 
   return {
     user: user[0],
@@ -67,17 +65,17 @@ async function getUserData(userId: number) {
       certificates: userCertificates.length,
       achievements: userAchievements.length,
     },
-  }
+  };
 }
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    redirect("/auth/login")
+    redirect("/auth/login");
   }
 
-  const userId = parseInt(session.user.id)
-  const userData = await getUserData(userId)
+  const userId = parseInt(session.user.id);
+  const userData = await getUserData(userId);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -103,7 +101,8 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-3xl font-bold text-gray-500 dark:text-gray-400">
-                {userData.user?.name?.[0]?.toUpperCase() || userData.user?.email[0]?.toUpperCase()}
+                {userData.user?.name?.[0]?.toUpperCase() ||
+                  userData.user?.email[0]?.toUpperCase()}
               </div>
             )}
             <div className="flex-1">
@@ -129,41 +128,31 @@ export default async function DashboardPage() {
             <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
               {userData.stats.totalCourses}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              Всего курсов
-            </div>
+            <div className="text-gray-600 dark:text-gray-400">Всего курсов</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="text-3xl font-bold text-green-600 dark:text-green-400">
               {userData.stats.completedCourses}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              Завершено
-            </div>
+            <div className="text-gray-600 dark:text-gray-400">Завершено</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
               {userData.stats.inProgressCourses}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              В процессе
-            </div>
+            <div className="text-gray-600 dark:text-gray-400">В процессе</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
               {userData.stats.certificates}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              Сертификатов
-            </div>
+            <div className="text-gray-600 dark:text-gray-400">Сертификатов</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="text-3xl font-bold text-red-600 dark:text-red-400">
               {userData.stats.achievements}
             </div>
-            <div className="text-gray-600 dark:text-gray-400">
-              Достижений
-            </div>
+            <div className="text-gray-600 dark:text-gray-400">Достижений</div>
           </div>
         </div>
 
@@ -291,7 +280,5 @@ export default async function DashboardPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
-
-
