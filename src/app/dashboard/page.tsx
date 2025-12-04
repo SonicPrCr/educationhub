@@ -9,14 +9,17 @@ import {
   achievements,
   progress,
   lessons,
+  users,
 } from "@/lib/schema"
 import { eq, and, desc } from "drizzle-orm"
 import Link from "next/link"
 import { UserInfo } from "@/components/auth/UserInfo"
+import Image from "next/image"
 
 async function getUserData(userId: number) {
-  const [userEnrollments, userCertificates, userAchievements] =
+  const [user, userEnrollments, userCertificates, userAchievements] =
     await Promise.all([
+      db.select().from(users).where(eq(users.id, userId)).limit(1),
       db
         .select({
           enrollment: enrollments,
@@ -53,6 +56,7 @@ async function getUserData(userId: number) {
   ).length
 
   return {
+    user: user[0],
     enrollments: userEnrollments,
     certificates: userCertificates,
     achievements: userAchievements,
@@ -83,6 +87,40 @@ export default async function DashboardPage() {
             Личный кабинет
           </h1>
           <UserInfo />
+        </div>
+
+        {/* Профиль пользователя */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+          <div className="flex items-center gap-6">
+            {userData.user?.avatar ? (
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-600">
+                <Image
+                  src={userData.user.avatar}
+                  alt="Avatar"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-3xl font-bold text-gray-500 dark:text-gray-400">
+                {userData.user?.name?.[0]?.toUpperCase() || userData.user?.email[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {userData.user?.name || "Пользователь"}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400">
+                {userData.user?.email}
+              </p>
+              <Link
+                href="/profile"
+                className="mt-2 inline-block text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              >
+                Редактировать профиль →
+              </Link>
+            </div>
+          </div>
         </div>
 
         {/* Статистика */}

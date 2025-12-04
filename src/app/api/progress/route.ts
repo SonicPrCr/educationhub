@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth-config"
 import { db } from "@/lib/db"
-import { progress, lessons, enrollments } from "@/lib/schema"
+import { progress, lessons, enrollments, certificates } from "@/lib/schema"
 import { eq, and, sql } from "drizzle-orm"
 import { z } from "zod"
 
@@ -107,6 +107,21 @@ export async function POST(request: NextRequest) {
       ? Math.round((completedCount / totalLessons) * 100)
       : 0
 
+    // Проверяем, был ли курс уже завершен
+    const [currentEnrollment] = await db
+      .select()
+      .from(enrollments)
+      .where(
+        and(
+          eq(enrollments.userId, userId),
+          eq(enrollments.courseId, lesson.courseId)
+        )
+      )
+      .limit(1)
+
+    const wasCompleted = currentEnrollment?.status === "COMPLETED"
+    const isNowCompleted = courseProgress === 100 && !wasCompleted
+
     // Обновляем запись на курс
     await db
       .update(enrollments)
@@ -121,6 +136,24 @@ export async function POST(request: NextRequest) {
           eq(enrollments.courseId, lesson.courseId)
         )
       )
+
+    // Если курс только что завершен, создаем сертификат
+    if (isNowCompleted) {
+      try {
+        const certificateNumber = `CERT-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`
+
+        await db.insert(certificates).values({
+          userId,
+          courseId: lesson.courseId,
+          certificateNumber,
+        })
+      } catch (error) {
+        // Логируем ошибку, но не прерываем обновление прогресса
+        console.error("Failed to create certificate:", error)
+      }
+    }
 
     return NextResponse.json(progressRecord)
   } catch (error) {

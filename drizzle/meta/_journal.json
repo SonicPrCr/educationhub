@@ -15,6 +15,13 @@
       "when": 1764652186511,
       "tag": "0001_faithful_plazm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764808456718,
+      "tag": "0002_gifted_thunderbird",
+      "breakpoints": true
     }
   ]
 }

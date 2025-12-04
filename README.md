@@ -28,7 +28,22 @@ pnpm install
 DATABASE_URL=postgresql://user:password@localhost:5432/educationhub
 NEXTAUTH_SECRET=your-secret-key-here
 NEXTAUTH_URL=http://localhost:3000
+
+# Gmail SMTP настройки
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-app-password
 ```
+
+### Настройка Gmail для отправки писем
+
+1. Включите двухфакторную аутентификацию в вашем Google аккаунте
+2. Перейдите в [Настройки аккаунта Google](https://myaccount.google.com/)
+3. Выберите "Безопасность" → "Двухэтапная аутентификация"
+4. После включения, перейдите в "Пароли приложений"
+5. Создайте новый пароль приложения для "Почта" и выберите устройство
+6. Скопируйте сгенерированный пароль и используйте его как `GMAIL_APP_PASSWORD`
+
+**Важно:** Используйте именно App Password, а не обычный пароль от Gmail!
 
 ### 3. Применение миграций
 
@@ -85,6 +100,10 @@ src/
 - Отзывы и рейтинги курсов
 - Сертификаты об окончании
 
+### Транзакционная почта
+- Восстановление пароля через email
+- Красивые HTML шаблоны писем
+
 ### Административная панель
 - Управление курсами
 - Управление категориями
@@ -103,6 +122,8 @@ src/
 - `POST /api/auth/register` - Регистрация
 - `POST /api/auth/login` - Вход (через NextAuth)
 - `GET /api/auth/me` - Получить текущего пользователя
+- `POST /api/auth/forgot-password` - Запрос на восстановление пароля (отправляет письмо)
+- `POST /api/auth/reset-password` - Сброс пароля по токену
 
 ### Курсы
 - `POST /api/courses/[id]/enroll` - Записаться на курс

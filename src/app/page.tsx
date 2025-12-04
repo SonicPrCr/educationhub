@@ -95,7 +95,7 @@ export default async function HomePage() {
             >
               {course.image && (
                 <div className="relative w-full h-48">
-                  <Image
+            <Image
                     src={course.image}
                     alt={course.title || "Course"}
                     fill

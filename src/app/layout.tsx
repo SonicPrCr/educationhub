@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <SessionProvider>
           <Navigation />
-          {children}
+        {children}
         </SessionProvider>
       </body>
     </html>
