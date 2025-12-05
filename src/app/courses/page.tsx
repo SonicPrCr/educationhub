@@ -10,6 +10,10 @@ import {
 } from "@/lib/schema";
 import { desc, eq, sql, and, or, like } from "drizzle-orm";
 
+// Отключаем статическую генерацию для этой страницы
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 async function getCourses(
   page: number = 1,
   categorySlug?: string,
@@ -48,49 +52,68 @@ async function getCourses(
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const [coursesList, total] = await Promise.all([
-    db
-      .select({
-        id: courses.id,
-        title: courses.title,
-        description: courses.description,
-        image: courses.image,
-        price: courses.price,
-        rating: courses.rating,
-        duration: courses.duration,
-        level: courses.level,
-        format: courses.format,
-        categoryName: categories.name,
-        institutionName: institutions.name,
-        instructorName: instructors.name,
-        enrollmentsCount: sql<number>`count(${enrollments.id})`,
-      })
-      .from(courses)
-      .leftJoin(categories, eq(courses.categoryId, categories.id))
-      .leftJoin(institutions, eq(courses.institutionId, institutions.id))
-      .leftJoin(instructors, eq(courses.instructorId, instructors.id))
-      .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
-      .where(where)
-      .groupBy(courses.id, categories.name, institutions.name, instructors.name)
-      .orderBy(desc(courses.createdAt))
-      .limit(limit)
-      .offset(skip),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(courses)
-      .leftJoin(categories, eq(courses.categoryId, categories.id))
-      .where(where),
-  ]);
+  try {
+    const [coursesList, total] = await Promise.all([
+      db
+        .select({
+          id: courses.id,
+          title: courses.title,
+          description: courses.description,
+          image: courses.image,
+          price: courses.price,
+          rating: courses.rating,
+          duration: courses.duration,
+          level: courses.level,
+          format: courses.format,
+          categoryName: categories.name,
+          institutionName: institutions.name,
+          instructorName: instructors.name,
+          enrollmentsCount: sql<number>`count(${enrollments.id})`,
+        })
+        .from(courses)
+        .leftJoin(categories, eq(courses.categoryId, categories.id))
+        .leftJoin(institutions, eq(courses.institutionId, institutions.id))
+        .leftJoin(instructors, eq(courses.instructorId, instructors.id))
+        .leftJoin(enrollments, eq(courses.id, enrollments.courseId))
+        .where(where)
+        .groupBy(
+          courses.id,
+          categories.name,
+          institutions.name,
+          instructors.name
+        )
+        .orderBy(desc(courses.createdAt))
+        .limit(limit)
+        .offset(skip),
+      db
+        .select({ count: sql<number>`count(*)` })
+        .from(courses)
+        .leftJoin(categories, eq(courses.categoryId, categories.id))
+        .where(where),
+    ]);
 
-  return {
-    courses: coursesList,
-    total: Number(total[0]?.count || 0),
-    totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
-  };
+    return {
+      courses: coursesList,
+      total: Number(total[0]?.count || 0),
+      totalPages: Math.ceil(Number(total[0]?.count || 0) / limit),
+    };
+  } catch (error) {
+    console.error("Error fetching courses:", error);
+    return {
+      courses: [],
+      total: 0,
+      totalPages: 0,
+    };
+  }
 }
 
 async function getCategories() {
-  return await db.select().from(categories);
+  try {
+    return await db.select().from(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
 }
 
 export default async function CoursesPage({
